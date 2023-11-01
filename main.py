@@ -1,19 +1,15 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-import os
+from flask import Flask, request, render_template, jsonify
 import sqlite3
-from models import Historial
+from flask_cors import CORS
 
-app = FastAPI()
+app = Flask(__name__, template_folder='')
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins="origins",
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
+app.config['DEBUG'] = True
+CORS(app, resources={r"/obtener_historial": {"origins": "*"}})
+CORS(app, resources={r"/guardar_historial": {"origins": "*"}})
+
+# Crear la base de datos y la tabla
 def create_database():
     conn = sqlite3.connect('historial.db')
     c = conn.cursor()
@@ -25,32 +21,38 @@ def create_database():
     ''')
     conn.commit()
     conn.close()
-   
-@app.get("/prueba")
-def read_root():
-    return {"Hello": "World"}
 
-# Ruta para obtener el historialF
-@app.get('/obtener_historial')
-def obtener_historial():
+create_database()
+
+@app.route("/prueba")
+def prueba():
+    return "Hello world!"
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+# Ruta para guardar el historial
+@app.route('/guardar_historial', methods=['POST'])
+def guardar_historial():
+    userWord = request.form.get('userWord')
+    isValidate = request.form.get('isValidate')
     conn = sqlite3.connect('historial.db')
     c = conn.cursor()
-    c.execute("SELECT userWord, isValidate FROM historial")
-    h = c.fetchall()
-    historial = list(map(lambda fila: Historial(userWord=fila[0], isValidate=fila[1]), h))
-    conn.close()
-    return historial
-
-@app.post('/guardar_historial')
-def guardar_historial(historial : Historial):
-    conn = sqlite3.connect('historial.db')
-    c = conn.cursor()
-    c.execute("INSERT INTO historial (userWord, isValidate) VALUES (?, ?)", (historial.userWord, historial.isValidate))
+    c.execute("INSERT INTO historial (userWord, isValidate) VALUES (?, ?)", (userWord, isValidate))
     conn.commit()
     conn.close()
     return "Historial guardado con éxito"
 
+# Ruta para obtener el historialF
+@app.route('/obtener_historial', methods=['GET'])
+def obtener_historial():
+    conn = sqlite3.connect('historial.db')
+    c = conn.cursor()
+    c.execute("SELECT userWord, isValidate FROM historial")
+    historial = c.fetchall()
+    conn.close()
+    return jsonify(historial)
 
-if not os.path.exists("historial.db"):
-    create_database()
-
+if __name__ == '__main__':
+    app.run()
