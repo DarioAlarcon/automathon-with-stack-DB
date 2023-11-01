@@ -2,16 +2,16 @@
 FROM python:3.11
 
 # 
-WORKDIR /code
+WORKDIR /BACKEND
 
 # 
-COPY ./requirements.txt /code/requirements.txt
+COPY ./requirements.txt /BACKEND/requirements.txt
 
 # 
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+RUN pip install --no-cache-dir --upgrade -r /BACKEND/requirements.txt
 
 # 
-COPY ./app /code/app
+COPY ./app /BACKEND/app
 
 # 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
